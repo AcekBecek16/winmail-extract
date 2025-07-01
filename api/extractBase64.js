@@ -6,8 +6,13 @@ export default async function handler(req, res) {
 	}
 
 	try {
-		// ⛏️ FIX: Properly parse the body
-		const { base64, filename } = await req.json();
+		// ⛏️ Manually collect and parse the body
+		let body = '';
+		for await (const chunk of req) {
+			body += chunk;
+		}
+
+		const { base64, filename } = JSON.parse(body);
 
 		if (!base64 || !filename) {
 			return res.status(400).json({ error: 'Missing base64 or filename' });
