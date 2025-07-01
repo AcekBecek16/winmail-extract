@@ -6,13 +6,21 @@ export default async function handler(req, res) {
 	}
 
 	try {
-		// ⛏️ Manually collect and parse the body
+		// 🔥 Manually read and parse raw JSON body
 		let body = '';
 		for await (const chunk of req) {
 			body += chunk;
 		}
 
-		const { base64, filename } = JSON.parse(body);
+		let json;
+		try {
+			json = JSON.parse(body);
+		} catch (err) {
+			console.error('Invalid JSON:', err);
+			return res.status(400).json({ error: 'Invalid JSON in request body' });
+		}
+
+		const { base64, filename } = json;
 
 		if (!base64 || !filename) {
 			return res.status(400).json({ error: 'Missing base64 or filename' });
@@ -28,12 +36,12 @@ export default async function handler(req, res) {
 
 			const html = content.Body
 				? Buffer.from(content.Body).toString('utf8')
-				: '<p>No HTML body found.</p>';
+				: '<p>No HTML content found.</p>';
 
 			const attachments = (content.Attachments || []).map((att) => ({
 				filename: att.Title || 'file.dat',
-				base64: Buffer.from(att.Data).toString('base64'),
 				contentType: att.ContentType || 'application/octet-stream',
+				base64: Buffer.from(att.Data).toString('base64'),
 			}));
 
 			return res.status(200).json({ html, attachments });
